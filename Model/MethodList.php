@@ -52,40 +52,20 @@ class MethodList extends \Magento\Payment\Model\MethodList
      */
     public function getAvailableMethods(\Magento\Quote\Api\Data\CartInterface $quote = null, $checkPPP = true)
     {
-
-        $pppEnabled = $this->scopeConfig->getValue(
-            'payment/iways_paypalplus_payment/active',
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE);
-
-        if ($checkPPP) {
-            $allowedPPPMethods = explode(
-                ',',
-                $this->scopeConfig->getValue(
-                    'payment/iways_paypalplus_payment/third_party_moduls',
-                    \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-                )
-            );
-        }
+        $allowedPPPMethods = explode(
+            ',',
+            $this->scopeConfig->getValue(
+                'payment/iways_paypalplus_payment/third_party_moduls',
+                \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+            )
+        );
         $store = $quote ? $quote->getStoreId() : null;
         $methods = [];
         $isFreeAdded = false;
         foreach ($this->paymentHelper->getStoreMethods($store, $quote) as $method) {
             if ($this->_canUseMethod($method, $quote)) {
                 $method->setInfoInstance($quote->getPayment());
-
-                if ($pppEnabled && strpos($method->getCode(), 'paypal_') === 0) {
-                    continue;
-                }
-
-                if ($checkPPP) {
-                    if (
-                    ($method->getCode() == Payment::CODE
-                        || $method->getCode() == self::AMAZON_PAYMENT
-                        || !in_array($method->getCode(), $allowedPPPMethods))
-                    ) {
-                        $methods[] = $method;
-                    }
-                } else {
+                if ($method->getCode() == Payment::CODE || $method->getCode() == self::AMAZON_PAYMENT || !in_array($method->getCode(), $allowedPPPMethods)) {
                     $methods[] = $method;
                 }
                 if ($method->getCode() == Free::PAYMENT_METHOD_FREE_CODE) {
@@ -108,7 +88,22 @@ class MethodList extends \Magento\Payment\Model\MethodList
      */
     public function getAvailableMethodsDontCheckPPP(\Magento\Quote\Api\Data\CartInterface $quote = null)
     {
-        return $this->getAvailableMethods($quote, false);
+        $store = $quote ? $quote->getStoreId() : null;
+        $methods = [];
+        $isFreeAdded = false;
+        foreach ($this->paymentHelper->getStoreMethods($store, $quote) as $method) {
+            if ($this->_canUseMethod($method, $quote)) {
+                $method->setInfoInstance($quote->getPayment());
+                $methods[] = $method;
+                if ($method->getCode() == Free::PAYMENT_METHOD_FREE_CODE) {
+                    $isFreeAdded = true;
+                }
+            }
+        }
+        if (!$isFreeAdded && !$quote->getGrandTotal()) {
+            $methods = $this->addFree($methods, $quote);
+        }
+        return $methods;
     }
 
     /**
