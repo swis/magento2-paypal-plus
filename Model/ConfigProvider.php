@@ -139,7 +139,7 @@ class ConfigProvider implements ConfigProviderInterface
 
     protected function getThirdPartyMethods()
     {
-        $paymentMethods = $this->methodList->getAvailableMethods($this->checkoutSession->getQuote(), false);
+        $paymentMethods = $this->methodList->getAvailableMethodsDontCheckPPP($this->checkoutSession->getQuote());
         $allowedPPPMethods = explode(
             ',',
             $this->scopeConfig->getValue(
