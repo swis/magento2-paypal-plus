@@ -100,6 +100,18 @@ class MethodList extends \Magento\Payment\Model\MethodList
     }
 
     /**
+     * Get Available Methods without PPP check
+     *
+     * @param \Magento\Quote\Api\Data\CartInterface $quote
+     * @return \Magento\Payment\Model\MethodInterface[]
+     * @api
+     */
+    public function getAvailableMethodsDontCheckPPP(\Magento\Quote\Api\Data\CartInterface $quote = null)
+    {
+        return $this->getAvailableMethods($quote, false);
+    }
+
+    /**
      * Adds Free Method
      *
      * @param \Magento\Payment\Model\MethodInterface[] $methods
